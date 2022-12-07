@@ -1,0 +1,36 @@
+{{template "base" .}}
+
+{{define "title"}}<title>Book Now</title>{{end}}
+
+{{define "content"}} 
+    <!--BODY-->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3"></div> <!--Empty div adds a space for 3 cols-->
+            <div class="col-md-6">
+                <h1 class="text-center mt-4">Make reservation</h1>
+                <!--BOOTSTRAP FORM-->
+                <form action="#" method="POST" novalidate class="needs-validate">
+                <div class="form-group mt-5">
+                    <label for="first_name">First name:</label>
+                    <input type="text" name="first_name" id="first_name" required autocomplete="off" class="form-control">
+                </div>
+                <div class="form-group mt-5">
+                    <label for="first_name">Last name:</label>
+                    <input type="text" name="last_name" id="last_name" required autocomplete="off" class="form-control">
+                </div>
+                <div class="form-group mt-5">
+                    <label for="email">Email:</label>
+                    <input type="email" name="email" id="email" required autocomplete="off" class="form-control">
+                </div>
+                <div class="form-group mt-5">
+                    <label for="phone">Phone Number:</label>
+                    <input type="text" name="phone" id="phone" required autocomplete="off" class="form-control">
+                </div>
+                <hr>
+                <input type="submit" class="btn btn-primary" value="Make reservation">
+                </form>
+            </div>
+        </div>
+    </div>
+{{end}}

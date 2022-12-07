@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/budidak/booking/pkg/config"
@@ -52,27 +50,22 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, "about.page.gohtml", &models.TemplateData{StringMap: stringMap})
 }
 
-func (m *Repository) Divide(w http.ResponseWriter, r *http.Request) {
-	result, err := divideValues(100.0, 0)
-	if err != nil {
-		fmt.Fprintf(w, "Error occurred: %s\n", err)
-		return
-	}
-	n, err := fmt.Fprintf(w, "%f / %f = %f", 100.0, 0.0, result) // verdiğimiz içeriği w'ya yazar. n kaç byte yazıldığıdır.
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Printf("Number of bytes written: %d\n", n)
-
+func (m *Repository) Generals(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "generals.page.gohtml", &models.TemplateData{})
 }
 
-func divideValues(x, y float32) (float32, error) {
-	// Hata olması durumunda default 0 döndürüp, bir error dönüyoruz.
-	if y == 0 {
-		err := errors.New("0 ile bölme işlemi yapilamaz")
-		return 0, err
-	}
-	// Hata olmazsa işlem sonucunu dönüyoruz ve err yerine nil değerini atıyoruz.
-	result := x / y
-	return result, nil
+func (m *Repository) Majors(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "majors.page.gohtml", &models.TemplateData{})
+}
+
+func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "make-reservation.page.gohtml", &models.TemplateData{})
+}
+
+func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "search-availability.page.gohtml", &models.TemplateData{})
+}
+
+func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
+	render.RenderTemplate(w, "contact.page.gohtml", &models.TemplateData{})
 }

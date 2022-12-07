@@ -3,21 +3,52 @@
 {{define "title"}}<title>HOME</title>{{end}}
 
 {{define "content"}}
-    <div class="container">
+    <!--BOOTSTRAP CAROUSEL-->
+    <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="/static/images/woman-laptop.png" class="d-block w-100" alt="Woman and laptop">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>First slide label</h5>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="/static/images/tray.png" class="d-block w-100" alt="Tray and coffee">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Second slide label</h5>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="/static/images/outside.png" class="d-block w-100" alt="Outside">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>Third slide label</h5>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+        </div>
+        <!--BODY-->
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col">
+                    <p class="text-center mt-4">
+                    Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eligendi ad est molestiae nam amet magni odio voluptate similique placeat fuga eius totam inventore nostrum, adipisci corrupti quae! Fuga placeat illo assumenda, aliquid laudantium iste rerum doloremque! Enim odio earum, rem nostrum dolorum blanditiis. Optio nostrum enim, a corrupti corporis deleniti, sed eveniet consectetur sequi recusandae rem harum soluta cupiditate sunt error odit quo similique amet quam earum natus eius consequuntur eos fugiat? Libero deleniti exercitationem delectus ratione sint blanditiis nisi, a et laudantium, voluptas minima hic consequatur impedit perspiciatis ab officiis numquam ullam obcaecati expedita unde odio. Provident accusamus neque, commodi reiciendis, inventore consectetur, reprehenderit aliquid quisquam tempora repellat tenetur quod. Fuga minus aperiam eos facere, assumenda impedit earum qui, facilis laborum, veritatis totam. Magni qui vel corporis modi nostrum maiores animi dolores sint libero esse itaque officia quisquam perferendis dignissimos pariatur possimus, laudantium enim est quia ipsam culpa fugiat consectetur dicta iure. Magni soluta qui at cupiditate doloribus? Animi reprehenderit eveniet sit voluptatibus vel tenetur, beatae suscipit, ut unde ea voluptate obcaecati sapiente ducimus maiores quia totam facilis nihil ipsam optio! Harum accusamus voluptas quo soluta explicabo, omnis ea maxime optio officia repellendus accusantium asperiores illo eum debitis repellat.
+                    </p>
+                </div>
+            </div>
         <div class="row">
-            <div class="col">
-                <h1>This is the Home</h1>
-                <p>Sample text</p>
-                <!--TemplateDatayı handle function ile yollamıştık burada aşağıdaki gibi çözümleriz.-->
-                <p>This came from the template : {{index .StringMap "test"}}</p>
-                <p> <!--if index.StringMap["remote_ip"] != ""-->
-                    {{if ne (index .StringMap "remote_ip") ""}}
-                        Your remote IP address is {{index .StringMap "remote_ip"}}
-                    {{else}}
-                        I don't know your IP adress. Visit the <a href="/">Home Page</a> so I can set it.
-                    {{end}}
-                </p>
-                <img src="/static/images/house.jpg">
+            <div class="col text-center">
+                <a href="/make-reservation" class="btn btn-success">Make reservation</a>
             </div>
         </div>
     </div>
