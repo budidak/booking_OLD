@@ -43,6 +43,42 @@
             attention.custom({
                 title: 'Choose your dates',
                 msg: html,
+                willOpen: () => {
+                    const elem = document.getElementById("reservation-dates-modal");
+                    const rp = new DateRangePicker(elem, {
+                      format: 'dd/mm/yyyy',
+                      showOnFocus: false,
+                      orientation: 'top'
+                    })
+                },
+                didOpen: () => {
+                    document.getElementById("start").removeAttribute("disabled");
+                    document.getElementById("end").removeAttribute("disabled");
+                },
+                preConfirm: () => {
+                    return [
+                      document.getElementById('start').value,
+                      document.getElementById('end').value
+                    ]
+                },
+                // async işlem yapmak için yazdık fetch api (default get yerine override ettik post olarak kullanıyoruz.)
+                // url'ye git get request ile veriyi al, işlem bitince response değişkenine ata ve response.json() dön.
+                // Döndüğün değeri data değişkenine ata vsvs. Mantık böyledir.
+                callback: (result) => {
+                    // post yapabilmek için formu id ile seçtik ve FormData() oluşturduk daha sonra fetch ile post yaptık.
+                    let form = document.getElementById("check-availability-form");
+                    let formData = new FormData(form);
+                    formData.append("csrf_token", "{{.CSRFToken}}");  // forma CSRF tokeni input şeklinde eklemek yerine böyle yaptık.
+                    fetch('/search-availability-json', {
+                        method: "post",
+                        body: formData,
+                    }).then(response => response.json())
+                      .then(data => {
+                        console.log(data);
+                        console.log(data.ok);
+                        console.log(data.message);
+                    })
+                }
             });
         });
     </script>

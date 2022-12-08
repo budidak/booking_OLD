@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/budidak/booking/pkg/config"
-	"github.com/budidak/booking/pkg/models"
+	"github.com/budidak/booking/internal/config"
+	"github.com/budidak/booking/internal/models"
+	"github.com/justinas/nosurf"
 )
 
 var app *config.AppConfig
@@ -19,12 +20,13 @@ func NewTemplates(a *config.AppConfig) {
 	app = a
 }
 
-// Şu an için parametre olarak aldığı değeri return ediyor direkt
-func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+// POST requestler yapabilmek için unique CSRF token oluşturacak sayfada.
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.CSRFToken = nosurf.Token(r)
 	return td
 }
 
-func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
 	// get the template cache from the app config if UseCache true, else read it from disk
 	var templateCache map[string]*template.Template
 	if app.UseCache {
@@ -40,7 +42,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 	}
 
 	buf := new(bytes.Buffer)
-	td = AddDefaultData(td)
+	td = AddDefaultData(td, r)
 	_ = t.Execute(buf, td)
 
 	// render the template

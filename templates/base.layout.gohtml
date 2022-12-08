@@ -168,34 +168,44 @@
                   msg = "",
                   title = "",
                 } = c;
-                const { value: formValues } = await Swal.fire({
+                const { value: result } = await Swal.fire({
                   title: title,
                   html: msg,
                   backdrop: true,
                   focusConfirm: false,
                   showCancelButton: true,
+                  // bu fonksiyonları böyle yapmamız custom hale getirmemizi sağladı. Yani generals room için farklı majors için farklı kullanabiliriz istersek.
                   willOpen: () => {
-                    const elem = document.getElementById("reservation-dates-modal");
-                    const rp = new DateRangePicker(elem, {
-                      format: 'dd/mm/yyyy',
-                      showOnFocus: false,
-                      orientation: 'top'
-                    })
+                    if (c.willOpen !== undefined) {
+                      c.willOpen()
+                    }
                   },
                   didOpen: () => {
-                    document.getElementById("start").removeAttribute("disabled");
-                    document.getElementById("end").removeAttribute("disabled");
+                    if (c.didOpen !== undefined) {
+                      c.didOpen()
+                    }
                   },
                   preConfirm: () => {
-                    return [
-                      document.getElementById('start').value,
-                      document.getElementById('end').value
-                    ]
+                    if (c.preConfirm !== undefined) {
+                      c.preConfirm()
+                    }
                   }
                 })
 
-                if (formValues) {
-                  Swal.fire(JSON.stringify(formValues))
+                // Odalardan rezervasyon yapma butonuna tıkladığımızda arkaplanda AJAX async js çalışacak ve sayfayı yenilemeden JSON bilgisini alıp gelecek.
+                // eğer result yani Swal.fire() ile dönen sonuç varsa, cancel edilmemişse, value varsa, callback attribute tanımlanmışsa oradaki fonksiyonu çalıştıracağız.
+                if (result) {
+                  if (result.dismiss !== Swal.DismissReason.cancel) {
+                    if (result.value !== "") {
+                      if (c.callback !== undefined) {
+                        c.callback(result);
+                      }
+                    } else {
+                      c.callback(false);
+                    }
+                  } else {
+                    c.callback(false);
+                  }
                 }
               }
 
