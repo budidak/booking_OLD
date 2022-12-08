@@ -19,4 +19,4 @@ type AppConfig struct {
 
 // Böyle bir şey yazmamızın nedeni, main() içerisinden bu ayarlarla oynayarak programımız üzerinde daha fazla kontrole sahip olmak. Örneğin development mode'da UseCache false haline getirip her şeyi diskten okuyabiliriz. Ama production mode'a geçtiğimizde bunu true yaparız ve eğer sayfa cache değişkenimizde kayıtlıysa bilgiyi oradan çekeriz.
 
-// Buna REPOSITORY pattern ismi verilir.
+// Buna REPOSITORY pattern ismi verilir. Data source ile service arasına layer ekliyoruz yani. İkisi de buna erişebiliyor.

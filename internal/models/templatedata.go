@@ -1,5 +1,7 @@
 package models
 
+import "github.com/budidak/booking/internal/forms"
+
 type TemplateData struct {
 	StringMap map[string]string
 	IntMap    map[string]int
@@ -9,4 +11,5 @@ type TemplateData struct {
 	Flash     string
 	Warning   string
 	Error     string
+	Form      *forms.Form // client-server arasında kullanacağımız form bilgileri için.
 }

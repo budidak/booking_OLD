@@ -15,7 +15,7 @@ import (
 
 var app *config.AppConfig
 
-// sets the config for the template package
+// sets the config for the template package (bunu mainden çağırdık ve orada ilk değerleri verilen programımızın configuration objesine burada eşitledik. Yani o objeye buradan da müdahale edebiliriz artık.)
 func NewTemplates(a *config.AppConfig) {
 	app = a
 }

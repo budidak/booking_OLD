@@ -14,10 +14,11 @@ import (
 
 const portNumber = ":8080"
 
-var app config.AppConfig
+var app config.AppConfig //mainde bunu oluşturup değerlerini veriyoruz ya da değiştiriyoruz, ama kullanılacak diğer dosyalarda da bunu pointer olarak *config.AppConfig olarak kullanıyoruz ki hepsi memoryde aynı şeyi göstersin.
 var session *scs.SessionManager
 
 func main() {
+	// app. olanlar configuration için
 	app.InProduction = false
 
 	// session management
@@ -36,8 +37,8 @@ func main() {
 	app.UseCache = false
 
 	// Repository pattern
-	repo := handlers.NewRepo(&app)
-	handlers.NewHandlers(repo)
+	repo := handlers.NewRepo(&app) // returns App (so =>  repo.App = *config.AppConfig)
+	handlers.NewHandlers(repo)     // creates Repo variable = repo (so we can use Repo.App in handlers.go now)
 	render.NewTemplates(&app)
 
 	// Starting server

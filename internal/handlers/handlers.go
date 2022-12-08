@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/budidak/booking/internal/config"
+	"github.com/budidak/booking/internal/forms"
 	"github.com/budidak/booking/internal/models"
 	"github.com/budidak/booking/internal/render"
 )
@@ -50,7 +51,9 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	stringMap["remote_ip"] = remoteIP
 
 	// send the data to the template
-	render.RenderTemplate(w, r, "about.page.gohtml", &models.TemplateData{StringMap: stringMap})
+	render.RenderTemplate(w, r, "about.page.gohtml", &models.TemplateData{
+		StringMap: stringMap,
+	})
 }
 
 func (m *Repository) Generals(w http.ResponseWriter, r *http.Request) {
@@ -61,8 +64,49 @@ func (m *Repository) Majors(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, r, "majors.page.gohtml", &models.TemplateData{})
 }
 
+// Get request handler for make-reservation template
+// yani tarayıcıda o template sayfası açıldığında bu fonksiyon çalışacak ve server tarafında empty Form objesi oluşturacak ve onu html'e gönderecek ve belirttiğimiz sayfayı render edecek..
 func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "make-reservation.page.gohtml", &models.TemplateData{})
+	var emptyReservation models.Reservation
+	data := make(map[string]interface{})
+	data["reservation"] = emptyReservation // sayfa ilk yüklendiğinde emptyReservation gösterilecek
+	render.RenderTemplate(w, r, "make-reservation.page.gohtml", &models.TemplateData{
+		Form: forms.New(nil),
+		Data: data,
+	})
+}
+
+// to handle the posting of a reservation form
+func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// bunu renderTemplate ile templateData verisine geçtik ve oradan html sayfalarımızda kullanabiliriz.
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Email:     r.Form.Get("email"),
+		Phone:     r.Form.Get("phone"),
+	}
+
+	form := forms.New(r.PostForm)
+
+	form.Required("first_name", "last_name", "email", "phone") // bunlardan herhangi biri empty ise hata mesajı ekliyoruz bu key değerlerine forms.go içinde.
+	form.MinLength("first_name", 3, r)                         // first_name field en az 3 karakter olmalı
+	form.IsEmail("email")                                      // email field gerçek bir email içermeli
+
+	if !form.Valid() {
+		data := make(map[string]interface{})
+		data["reservation"] = reservation
+		render.RenderTemplate(w, r, "make-reservation.page.gohtml", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
 }
 
 func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {

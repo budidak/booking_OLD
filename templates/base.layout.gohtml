@@ -73,9 +73,10 @@
             <!--SWEET ALERT JS LINK for modal alerts (https://sweetalert2.github.io)-->
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.15.5/dist/sweetalert2.min.js"></script>
             <!--CUSTOM JS (Write it at end to speed things up.)-->
+            {{block "js" .}} {{end}}
             <script>
             let attention = Prompt();
-            // Bootsrap Form Validation script (to override browser's default validation)
+            // Client-Side form validation -> Bootsrap Form Validation script (to override browser's default validation)
             (function () {
               'use strict';
               window.addEventListener('load', function () {
@@ -217,7 +218,6 @@
               }
             }
             </script>
-            {{block "js" .}} {{end}}
         </body>
     </html>
 {{end}}
