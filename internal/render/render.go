@@ -13,6 +13,8 @@ import (
 	"github.com/justinas/nosurf"
 )
 
+var functions = template.FuncMap{}
+
 var app *config.AppConfig
 
 // sets the config for the template package (bunu mainden çağırdık ve orada ilk değerleri verilen programımızın configuration objesine burada eşitledik. Yani o objeye buradan da müdahale edebiliriz artık.)
@@ -21,7 +23,12 @@ func NewTemplates(a *config.AppConfig) {
 }
 
 // POST requestler yapabilmek için unique CSRF token oluşturacak sayfada.
+// adds data for all templates
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	// sayfa her render edildiğinde bu bilgiler sayfalara gönderilir.
+	td.Flash = app.Session.PopString(r.Context(), "flash")
+	td.Warning = app.Session.PopString(r.Context(), "warning")
+	td.Error = app.Session.PopString(r.Context(), "error")
 	td.CSRFToken = nosurf.Token(r)
 	return td
 }
@@ -29,6 +36,7 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
 	// get the template cache from the app config if UseCache true, else read it from disk
 	var templateCache map[string]*template.Template
+
 	if app.UseCache {
 		templateCache = app.TemplateCache
 	} else {
@@ -58,7 +66,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	myCache := map[string]*template.Template{} // myCache := make(map[string]*template.Template)
 
 	// get all files name *.page.gohtml from ./templates folder
-	pages, err := filepath.Glob("./templates/*.page.gohtml")
+	pages, err := filepath.Glob("./templates/*.gotmpl")
 	if err != nil {
 		return myCache, err
 	}
@@ -66,13 +74,13 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	// loop through the pages, dizinde bulduğumuz dosya isimlerinin tutulduğu slice üzerinde döngü kurarak hepsinden ayrı ayrı Template oluşturuyoruz bunu da ParseFiles() ile yapıyoruz.
 	for _, page := range pages {
 		name := filepath.Base(page)
-		ts, err := template.New(name).ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
 		if err != nil {
 			return myCache, err
 		}
 
 		// base layout var mı diye kontrol ediyoruz (çünkü diğer .gohtml sayfaları import edebilir.)
-		matches, err := filepath.Glob("./templates/*.layout.gohtml")
+		matches, err := filepath.Glob("./templates/*.layout.gotmpl")
 		if err != nil {
 			return myCache, err
 		}
@@ -80,7 +88,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		// eğer base layout varsa, page.gohtml sayfalarında gereklilik olacağı için ParseGlob() ile parse ediyoruz.
 		// ilk versiyonlarda ("./templates/"+tmpl, "./templates/base.layout.gohtml") yaptığımız şeyi yaptık yani.
 		if len(matches) > 0 {
-			ts, err = ts.ParseGlob("./templates/*.layout.gohtml")
+			ts, err = ts.ParseGlob("./templates/*.layout.gotmpl")
 			if err != nil {
 				return myCache, err
 			}

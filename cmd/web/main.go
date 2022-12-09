@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/budidak/booking/internal/config"
 	"github.com/budidak/booking/internal/handlers"
+	"github.com/budidak/booking/internal/models"
 	"github.com/budidak/booking/internal/render"
 )
 
@@ -18,6 +20,9 @@ var app config.AppConfig //mainde bunu oluşturup değerlerini veriyoruz ya da d
 var session *scs.SessionManager
 
 func main() {
+	// session ne tür bilgi tutacak (aynı post bilgisini farklı url'lerde kullanmak için)
+	gob.Register(models.Reservation{})
+
 	// app. olanlar configuration için
 	app.InProduction = false
 
@@ -31,7 +36,7 @@ func main() {
 
 	templateCache, err := render.CreateTemplateCache()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Cannot create template cache")
 	}
 	app.TemplateCache = templateCache
 	app.UseCache = false
@@ -47,5 +52,9 @@ func main() {
 		Addr:    portNumber,
 		Handler: routes(&app),
 	}
-	log.Fatal(srv.ListenAndServe())
+	
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

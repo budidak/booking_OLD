@@ -11,7 +11,7 @@ func (e errors) Add(field, message string) {
 // returns the first error message (bir field için birden fazla hata olabilir o yüzden her seferinde arraydaki ilk elemanı gösterdim.)
 func (e errors) Get(field string) string {
 	es := e[field]
-	if len(e) == 0 {
+	if len(es) == 0 {
 		return ""
 	}
 	return es[0]

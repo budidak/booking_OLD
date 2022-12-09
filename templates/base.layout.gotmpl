@@ -109,7 +109,19 @@
                 icon: icon,
                 confirmButtonText: confirmationButtonText
               })
-            }
+            };
+
+            {{with .Error}}
+              notify("{{.}}", "error");
+            {{end}}
+
+            {{with .Flash}}
+              notify("{{.}}", "success");
+            {{end}}
+
+            {{with .Warning}}
+              notify("{{.}}", "warning");
+            {{end}}
 
             function Prompt() {
               let toast = function (c) {
@@ -172,7 +184,7 @@
                 const { value: result } = await Swal.fire({
                   title: title,
                   html: msg,
-                  backdrop: true,
+                  backdrop: false,
                   focusConfirm: false,
                   showCancelButton: true,
                   // bu fonksiyonları böyle yapmamız custom hale getirmemizi sağladı. Yani generals room için farklı majors için farklı kullanabiliriz istersek.

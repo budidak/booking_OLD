@@ -1,35 +1,36 @@
 {{template "base" .}}
 
-{{define "title"}}<title>General's Quarter Room</title>{{end}}
+{{define "title"}}<title>Major's Suite Room</title>{{end}}
 
 {{define "content"}} 
     <!--BODY-->
     <div class="container-fluid">
         <div class="row">
             <div class="col">
-                <img src="/static/images/generals-quarters.png" class="img-fluid img-thumbnail mx-auto d-block room-image" alt="General's quarters room">
+                <img src="/static/images/marjors-suite.png" class="img-fluid img-thumbnail mx-auto d-block room-image" alt="Major's suite room">
             </div>
         </div>
         <div class="row">
             <div class="col">
-                <h1 class="text-center mt-4">General's Quarters</h1>
+                <h1 class="text-center mt-4">Major's Suite</h1>
                 <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Eligendi ad est molestiae nam amet magni odio voluptate similique placeat fuga eius totam inventore nostrum, adipisci corrupti quae! Fuga placeat illo assumenda, aliquid laudantium iste rerum doloremque! Enim odio earum, rem nostrum dolorum blanditiis. Optio nostrum enim, a corrupti corporis deleniti, sed eveniet consectetur sequi recusandae rem harum soluta cupiditate sunt error odit quo similique amet quam earum natus eius consequuntur eos fugiat? Libero deleniti exercitationem delectus ratione sint blanditiis nisi, a et laudantium, voluptas minima hic consequatur impedit perspiciatis ab officiis numquam ullam obcaecati expedita unde odio. Provident accusamus neque, commodi reiciendis, inventore consectetur, reprehenderit aliquid quisquam tempora repellat tenetur quod. Fuga minus aperiam eos facere, assumenda impedit earum qui, facilis laborum, veritatis totam. Magni qui vel corporis modi nostrum maiores animi dolores sint libero esse itaque officia quisquam perferendis dignissimos pariatur possimus, laudantium enim est quia ipsam culpa fugiat consectetur dicta iure. Magni soluta qui at cupiditate doloribus? Animi reprehenderit eveniet sit voluptatibus vel tenetur, beatae suscipit, ut unde ea voluptate obcaecati sapiente ducimus maiores quia totam facilis nihil ipsam optio! Harum accusamus voluptas quo soluta explicabo, omnis ea maxime optio officia repellendus accusantium asperiores illo eum debitis repellat.</p>
             </div>
         </div>
-        <div class="row">
-            <div class="col text-center">
-                <a href="#!" class="btn btn-success" id="check-availability-btn">Check Availability</a>
+            <div class="row">
+                <div class="col text-center">
+                    <a href="#!" class="btn btn-success" id="check-availability-btn">Check Availability</a>
+                </div>
             </div>
         </div>
     </div>
 {{end}}
 
-{{block "js" .}}
+{{define "js"}} 
     <script>
         // Adding functionality to my button. It opens a form for picking a date when it is clicked.
         document.getElementById("check-availability-btn").addEventListener("click", function () {
             let html = `
-                <form id="check-availability-form" action="#" method="post" novalidate class="needs-validation">
+                <form id="check-availability-form" action="" method="post" novalidate class="needs-validation">
                     <div class="row" id="reservation-dates-modal">
                         <div class="col">
                             <input disabled required class="form-control" type="text" name="start" id="start" placeholder="Arrival Date">
