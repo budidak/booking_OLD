@@ -2,7 +2,6 @@ package forms
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -23,19 +22,20 @@ func New(data url.Values) *Form {
 	}
 }
 
+// Valid returns true if there are no errors
+func (f *Form) Valid() bool {
+	return len(f.Errors) == 0
+}
+
 // form ile alınan bilginin name değerinin, serverda karşılığı var mı?
-func (f *Form) Has(field string, r *http.Request) bool {
-	x := r.Form.Get("field")
+func (f *Form) Has(field string) bool {
+	// x := r.Form.Get(field)  // bu varken parametrede r *http.Request vardı ama artık kaldırdık gerek yok.
+	x := f.Get(field) // böyle yapmalıyız çünkü yukarıdaki gibi yapınca request içinden forma erişmeye çalışıyorsa testten kalıyor. (forms_test.go)
 	if x == "" {
 		f.Errors.Add(field, "This field cannot be blank.")
 		return false
 	}
 	return true
-}
-
-// Valid returns true if there are no errors
-func (f *Form) Valid() bool {
-	return len(f.Errors) == 0
 }
 
 // ... kullandığımız zaman variadic function olarak isimlendiriliyor. *args
@@ -51,8 +51,9 @@ func (f *Form) Required(fields ...string) {
 }
 
 // checks the minimum length of the fields
-func (f *Form) MinLength(field string, length int, r *http.Request) bool {
-	x := r.Form.Get(field)
+func (f *Form) MinLength(field string, length int) bool {
+	// x := r.Form.Get(field)
+	x := f.Get(field)
 	if len(x) < length {
 		f.Errors.Add(field, fmt.Sprintf("This field must be at least %d characters long", length))
 		return false

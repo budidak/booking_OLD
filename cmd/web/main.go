@@ -19,7 +19,29 @@ const portNumber = ":8080"
 var app config.AppConfig //mainde bunu oluşturup değerlerini veriyoruz ya da değiştiriyoruz, ama kullanılacak diğer dosyalarda da bunu pointer olarak *config.AppConfig olarak kullanıyoruz ki hepsi memoryde aynı şeyi göstersin.
 var session *scs.SessionManager
 
+// main function is the entry point to our program
 func main() {
+	err := run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Starting server
+	fmt.Printf("Starting application on port %s\n", portNumber)
+	srv := &http.Server{
+		Addr:    portNumber,
+		Handler: routes(&app),
+	}
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// main fonksiyonumuzu olabildiğince kısa yazmalıyız çünkü maini test etmeyeceğiz.
+// Onun içerisindeki kodları ayrı bir fonksiyon olarak yazarak mainde çalıştırdık sadece.
+func run() error {
 	// session ne tür bilgi tutacak (aynı post bilgisini farklı url'lerde kullanmak için)
 	gob.Register(models.Reservation{})
 
@@ -37,6 +59,7 @@ func main() {
 	templateCache, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("Cannot create template cache")
+		return err
 	}
 	app.TemplateCache = templateCache
 	app.UseCache = false
@@ -46,15 +69,5 @@ func main() {
 	handlers.NewHandlers(repo)     // creates Repo variable = repo (so we can use Repo.App in handlers.go now)
 	render.NewTemplates(&app)
 
-	// Starting server
-	fmt.Printf("Starting application on port %s\n", portNumber)
-	srv := &http.Server{
-		Addr:    portNumber,
-		Handler: routes(&app),
-	}
-	
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return nil // Buraya kadar çalışırsa zaten hata yoktur, nil dönebiliriz.
 }

@@ -95,7 +95,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	form := forms.New(r.PostForm)
 
 	form.Required("first_name", "last_name", "email") // bunlardan herhangi biri empty ise hata mesajı ekliyoruz bu key değerlerine forms.go içinde.
-	form.MinLength("first_name", 3, r)                // first_name field en az 3 karakter olmalı
+	form.MinLength("first_name", 3)                   // first_name field en az 3 karakter olmalı
 	form.IsEmail("email")                             // email field gerçek bir email içermeli
 
 	if !form.Valid() {

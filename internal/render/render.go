@@ -2,9 +2,9 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"path/filepath"
 
@@ -16,6 +16,8 @@ import (
 var functions = template.FuncMap{}
 
 var app *config.AppConfig
+
+var pathToTemplate string = "./templates"
 
 // sets the config for the template package (bunu mainden çağırdık ve orada ilk değerleri verilen programımızın configuration objesine burada eşitledik. Yani o objeye buradan da müdahale edebiliriz artık.)
 func NewTemplates(a *config.AppConfig) {
@@ -33,7 +35,7 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	return td
 }
 
-func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
 	// get the template cache from the app config if UseCache true, else read it from disk
 	var templateCache map[string]*template.Template
 
@@ -46,7 +48,7 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *mod
 	// get requested template from cache
 	t, ok := templateCache[tmpl]
 	if !ok {
-		log.Fatal("Could not get template from template cache")
+		return errors.New("could not get template from template cache")
 	}
 
 	buf := new(bytes.Buffer)
@@ -57,7 +59,9 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *mod
 	_, err := buf.WriteTo(w)
 	if err != nil {
 		fmt.Println("error writing template to browser", err)
+		return err
 	}
+	return nil
 }
 
 // Dosya isimlerini tek tek manual yazmak yerine, Glob() ile dizin içinde arattık ve otomatikleştirdik.
@@ -66,7 +70,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	myCache := map[string]*template.Template{} // myCache := make(map[string]*template.Template)
 
 	// get all files name *.page.gohtml from ./templates folder
-	pages, err := filepath.Glob("./templates/*.gotmpl")
+	pages, err := filepath.Glob(fmt.Sprintf("%s/*.gotmpl", pathToTemplate))
 	if err != nil {
 		return myCache, err
 	}
@@ -80,7 +84,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		}
 
 		// base layout var mı diye kontrol ediyoruz (çünkü diğer .gohtml sayfaları import edebilir.)
-		matches, err := filepath.Glob("./templates/*.layout.gotmpl")
+		matches, err := filepath.Glob(fmt.Sprintf("%s/*.layout.gotmpl", pathToTemplate))
 		if err != nil {
 			return myCache, err
 		}
@@ -88,7 +92,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		// eğer base layout varsa, page.gohtml sayfalarında gereklilik olacağı için ParseGlob() ile parse ediyoruz.
 		// ilk versiyonlarda ("./templates/"+tmpl, "./templates/base.layout.gohtml") yaptığımız şeyi yaptık yani.
 		if len(matches) > 0 {
-			ts, err = ts.ParseGlob("./templates/*.layout.gotmpl")
+			ts, err = ts.ParseGlob(fmt.Sprintf("%s/*.layout.gotmpl", pathToTemplate))
 			if err != nil {
 				return myCache, err
 			}
