@@ -20,7 +20,7 @@ var app *config.AppConfig
 var pathToTemplate string = "./templates"
 
 // sets the config for the template package (bunu mainden çağırdık ve orada ilk değerleri verilen programımızın configuration objesine burada eşitledik. Yani o objeye buradan da müdahale edebiliriz artık.)
-func NewTemplates(a *config.AppConfig) {
+func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
@@ -35,7 +35,7 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	return td
 }
 
-func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
+func Template(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
 	// get the template cache from the app config if UseCache true, else read it from disk
 	var templateCache map[string]*template.Template
 

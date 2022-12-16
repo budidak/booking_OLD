@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/budidak/booking/internal/config"
+	"github.com/budidak/booking/internal/driver"
 	"github.com/budidak/booking/internal/forms"
+	"github.com/budidak/booking/internal/helpers"
 	"github.com/budidak/booking/internal/models"
 	"github.com/budidak/booking/internal/render"
+	"github.com/budidak/booking/internal/repository"
+	"github.com/budidak/booking/internal/repository/dbrepo"
 )
 
 // config.go düzenlemesinden sonra yazdık bu kısmı da.
@@ -19,12 +25,14 @@ var Repo *Repository // repository used by the handlers (tüm handler metotları
 
 type Repository struct {
 	App *config.AppConfig
+	DB  repository.DatabaseRepo // database connection
 }
 
 // creates a new repository
-func NewRepo(a *config.AppConfig) *Repository {
+func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
+		DB:  dbrepo.NewPostgresRepo(db.SQL, a), // database connection
 	}
 }
 
@@ -35,33 +43,19 @@ func NewHandlers(r *Repository) {
 
 // Repository pattern yazdıktan sonra bunları receiver function haline getiriyoruz.
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
-	// Home ziyaret edildiğinde requestten ip adresini alıp sessiona kaydediyoruz örneğin.
-	remoteIP := r.RemoteAddr
-	m.App.Session.Put(r.Context(), "remote_ip", remoteIP) // key:value şeklinde session'a bilgi ekliyoruz.
-	render.RenderTemplate(w, r, "home.gotmpl", &models.TemplateData{})
+	render.Template(w, r, "home.gotmpl", &models.TemplateData{})
 }
 
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
-	// perform some logic
-	stringMap := make(map[string]string)
-	stringMap["test"] = "Hello, again."
-
-	// Home functionda bilgiyi yükledik, burada sessiondan bilgiyi alabiliyoruz.
-	remoteIP := m.App.Session.GetString(r.Context(), "remote_ip")
-	stringMap["remote_ip"] = remoteIP
-
-	// send the data to the template
-	render.RenderTemplate(w, r, "about.gotmpl", &models.TemplateData{
-		StringMap: stringMap,
-	})
+	render.Template(w, r, "about.gotmpl", &models.TemplateData{})
 }
 
 func (m *Repository) Generals(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "generals.gotmpl", &models.TemplateData{})
+	render.Template(w, r, "generals.gotmpl", &models.TemplateData{})
 }
 
 func (m *Repository) Majors(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "majors.gotmpl", &models.TemplateData{})
+	render.Template(w, r, "majors.gotmpl", &models.TemplateData{})
 }
 
 // Get request handler for make-reservation template
@@ -70,7 +64,7 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 	var emptyReservation models.Reservation
 	data := make(map[string]interface{})
 	data["reservation"] = emptyReservation // sayfa ilk yüklendiğinde emptyReservation gösterilecek
-	render.RenderTemplate(w, r, "make-reservation.gotmpl", &models.TemplateData{
+	render.Template(w, r, "make-reservation.gotmpl", &models.TemplateData{
 		Form: forms.New(nil),
 		Data: data,
 	})
@@ -80,16 +74,39 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
 		return
 	}
 
-	// bunu renderTemplate ile templateData verisine geçtik ve oradan html sayfalarımızda kullanabiliriz.
+	// Bunları form verisinde kullanıyoruz, databasede, rezervasyonla ilgili bilgiler.
+	sd := r.Form.Get("start_date")
+	ed := r.Form.Get("end_date")
+	// 01-01-2022 gibi dönecek bunu handle etmeliyiz önce. GO date&time formatlarken garip bir yaklaşım sergiler.
+	// https://www.pauladamsmith.com/blog/2011/05/go_time.html
+	timeLayout := "2006-01-02"
+	startDate, err := time.Parse(timeLayout, sd)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	endDate, err := time.Parse(timeLayout, ed)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	// bunu Template() ile templateData verisine geçtik ve oradan html sayfalarımızda kullanabiliriz.
 	reservation := models.Reservation{
 		FirstName: r.Form.Get("first_name"),
 		LastName:  r.Form.Get("last_name"),
 		Email:     r.Form.Get("email"),
 		Phone:     r.Form.Get("phone"),
+		StartDate: startDate,
+		EndDate:   endDate,
+		RoomID:    roomID,
 	}
 
 	form := forms.New(r.PostForm)
@@ -101,11 +118,17 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := make(map[string]interface{})
 		data["reservation"] = reservation
-		render.RenderTemplate(w, r, "make-reservation.gotmpl", &models.TemplateData{
+		render.Template(w, r, "make-reservation.gotmpl", &models.TemplateData{
 			Form: form,
 			Data: data,
 		})
 		return
+	}
+
+	// write to database
+	err = m.DB.InsertReservation(reservation)
+	if err != nil {
+		helpers.ServerError(w, err)
 	}
 
 	// buradan yollanan post bilgilerini, başka bir sayfada almak için sessions kullanabiliriz.
@@ -117,7 +140,8 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) // dönecek bilginin tipini de en sonda .() ile belirttik.
 	if !ok {
-		log.Println("Cannot get item from session.")
+		// log.Println("Cannot get item from session.")
+		m.App.ErrorLog.Println("Cannot get item from session.")
 		m.App.Session.Put(r.Context(), "error", "Can't get reservation from session")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect) // hata olursa direkt anasayfaya yönlendiriyoruz.
 		return
@@ -125,13 +149,13 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	m.App.Session.Remove(r.Context(), "reservation") // bilgiyi aldıktan sonra sessiondan kaldırmalıyız böyle.
 	data := make(map[string]interface{})
 	data["reservation"] = reservation
-	render.RenderTemplate(w, r, "reservation-summary.gotmpl", &models.TemplateData{
+	render.Template(w, r, "reservation-summary.gotmpl", &models.TemplateData{
 		Data: data,
 	})
 }
 
 func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "search-availability.gotmpl", &models.TemplateData{})
+	render.Template(w, r, "search-availability.gotmpl", &models.TemplateData{})
 }
 
 // to handle POST request
@@ -154,15 +178,15 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := json.MarshalIndent(resp, "", "    ")
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
+		return
 	}
 	log.Println(string(out)) // Dönen bilgiyi terminalde görmek için.
 	// tarayıcıya ne tür bir response döndüğümüzü söylemek için header yazmalıyız.
 	w.Header().Set("Content-type", "application/json")
 	w.Write(out) // Write() sends our response to response writer.
-
 }
 
 func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "contact.gotmpl", &models.TemplateData{})
+	render.Template(w, r, "contact.gotmpl", &models.TemplateData{})
 }
