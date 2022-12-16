@@ -23,13 +23,13 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/about", handlers.Repo.About)
 	mux.Get("/generals-quarters", handlers.Repo.Generals)
 	mux.Get("/majors-suite", handlers.Repo.Majors)
-	mux.Get("/make-reservation", handlers.Repo.Reservation)
-	mux.Post("/make-reservation", handlers.Repo.PostReservation)
 
 	mux.Get("/search-availability", handlers.Repo.Availability)
 	mux.Post("/search-availability", handlers.Repo.PostAvailability) // form verisini post request ile yollamak için.
 	mux.Post("/search-availability-json", handlers.Repo.AvailabilityJSON)
 
+	mux.Get("/make-reservation", handlers.Repo.Reservation)
+	mux.Post("/make-reservation", handlers.Repo.PostReservation)
 	mux.Get("/reservation-summary", handlers.Repo.ReservationSummary) // post requestten sonra rezervasyon bilgilerini göstereceğimiz sayfa)
 
 	mux.Get("/contact", handlers.Repo.Contact)
@@ -38,5 +38,4 @@ func routes(app *config.AppConfig) http.Handler {
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer)) // static/ klasöründeki her şeyi seçer ve onlardan /static prefixini kaldırır.
 	return mux
-
 }

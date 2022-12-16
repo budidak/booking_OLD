@@ -93,7 +93,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		helpers.ServerError(w, err)
 	}
 
-	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
+	roomID, err := strconv.Atoi(r.Form.Get("room_id")) // form içinde room_id değerini tutan bir hidden input oluşturmuştuk, buradaki room_id dummy data o yüzden. Kullanıcı ilerde odayı kendi seçtiğinde ona göre room_id belirlenecek.
 	if err != nil {
 		helpers.ServerError(w, err)
 	}
@@ -106,7 +106,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		Phone:     r.Form.Get("phone"),
 		StartDate: startDate,
 		EndDate:   endDate,
-		RoomID:    roomID,
+		RoomID:    roomID, // dummy data roomID kullanılarak rezervasyon yaptık.
 	}
 
 	form := forms.New(r.PostForm)
@@ -126,9 +126,25 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write to database
-	err = m.DB.InsertReservation(reservation)
+	newReservationID, err := m.DB.InsertReservation(reservation)
 	if err != nil {
 		helpers.ServerError(w, err)
+		return
+	}
+
+	restriction := models.RoomRestriction{
+		StartDate:     startDate,
+		EndDate:       endDate,
+		RoomID:        roomID,           // dummy room id yukarıdaki rezervasyon ile aynı.
+		ReservationID: newReservationID, // rezervation id
+		RestrictionID: 1,                // dummu restriction id for now.
+	}
+
+	// write to database
+	err = m.DB.InsertRoomRestriction(restriction)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
 	}
 
 	// buradan yollanan post bilgilerini, başka bir sayfada almak için sessions kullanabiliriz.

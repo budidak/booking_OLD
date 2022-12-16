@@ -12,6 +12,7 @@ import (
 	"github.com/budidak/booking/internal/config"
 	"github.com/budidak/booking/internal/driver"
 	"github.com/budidak/booking/internal/handlers"
+	"github.com/budidak/booking/internal/helpers"
 	"github.com/budidak/booking/internal/models"
 	"github.com/budidak/booking/internal/render"
 )
@@ -96,6 +97,7 @@ func run() (*driver.DB, error) {
 	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo) // creates Repo variable = repo (so we can use Repo.App in handlers.go now)
 	render.NewRenderer(&app)
+	helpers.NewHelpers(&app)
 
 	// return nil
 	return db, nil // Buraya kadar çalışırsa zaten hata yoktur, nil dönebiliriz.
