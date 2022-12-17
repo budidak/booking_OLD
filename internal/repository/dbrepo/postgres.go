@@ -22,7 +22,7 @@ func (m *postgresDBRepo) InsertReservation(res models.Reservation) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	query := `insert into reservations (first_name, last_name, email, phone, start_date, end_date, room_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	query := `insert into reservations (first_name, last_name, email, phone, start_date, end_date, room_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 
 	// context kullanırken, Exec() yerine ExecContext() kullanmalıyız.
 	_, err := m.DB.ExecContext(ctx, query,
@@ -56,7 +56,7 @@ func (m *postgresDBRepo) InsertReservation(res models.Reservation) (int, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `insert into reservations (first_name, last_name, email, phone, start_date, end_date, room_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`
+	query := `insert into reservations (first_name, last_name, email, phone, start_date, end_date, room_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id;`
 	// Burada sql query'imizi değiştirdik, sonunda "returning id" kısmı var. Query'den sonra id değerini return ediyor. Bunu da aşağıda .Scan() ile istediğimiz değişkene atıyoruz.
 
 	var newID int // rezervasyon yapılan odaya newID atayacağız.
@@ -84,7 +84,7 @@ func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `insert into room_restrictions (start_date, end_date, room_id, reservation_id, created_at, updated_at, restriction_id) values ($1, $2, $3, $4, $5, $6, $7)`
+	query := `insert into room_restrictions (start_date, end_date, room_id, reservation_id, created_at, updated_at, restriction_id) values ($1, $2, $3, $4, $5, $6, $7);`
 
 	_, err := m.DB.ExecContext(ctx, query,
 		r.StartDate,
@@ -102,3 +102,26 @@ func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 
 	return nil
 }
+
+// kullanıcı belirli tarihler arasında istenilen oda rezerveli mi değil mi diye arama yapabilecek.
+func (m *postgresDBRepo) SearchAvailabilityForDatesByRoomID(start, end time.Time, roomID int) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	query := `select count(id) from room_restrictions
+	          where room_id = $1 and $2 < end_date and $3 > start_date;`
+	var numRows int
+	// QueryContext ile QueryRowContext arasındaki farkı araştır.
+	row := m.DB.QueryRowContext(ctx, query, roomID, start, end)
+	err := row.Scan(&numRows)
+	if err != nil {
+		return false, err
+	}
+	// if returns true; room is available
+	if numRows == 0 {
+		return true, nil
+	}
+	// if returns false; room is unavailable
+	return false, nil
+}
+
+// kullanıcı seçili tarihler arasında hangi odalar available diye search yapabilecek.
