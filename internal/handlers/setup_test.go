@@ -12,6 +12,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/budidak/booking/internal/config"
+	"github.com/budidak/booking/internal/driver"
 	"github.com/budidak/booking/internal/models"
 	"github.com/budidak/booking/internal/render"
 	"github.com/go-chi/chi"
@@ -54,7 +55,7 @@ func getRoutes() http.Handler {
 	app.TemplateCache = templateCache
 	app.UseCache = true // false yaparsak her request sayfa yeniden oluşturulur.
 
-	repo := NewRepo(&app)
+	repo := NewRepo(&app, &driver.DB{}) // sonra incele
 	NewHandlers(repo)
 	render.NewRenderer(&app)
 
