@@ -1,0 +1,104 @@
+package render
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"html/template"
+	"net/http"
+	"path/filepath"
+
+	"github.com/budidak/booking/internal/config"
+	"github.com/budidak/booking/internal/models"
+	"github.com/justinas/nosurf"
+)
+
+var functions = template.FuncMap{}
+
+var app *config.AppConfig
+
+var pathToTemplate string = "./templates"
+
+// sets the config for the template package (bunu mainden çağırdık ve orada ilk değerleri verilen programımızın configuration objesine burada eşitledik. Yani o objeye buradan da müdahale edebiliriz artık.)
+func NewRenderer(a *config.AppConfig) {
+	app = a
+}
+
+// POST requestler yapabilmek için unique CSRF token oluşturacak sayfada.
+// adds data for all templates
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	// sayfa her render edildiğinde bu bilgiler sayfalara gönderilir.
+	td.Flash = app.Session.PopString(r.Context(), "flash")
+	td.Warning = app.Session.PopString(r.Context(), "warning")
+	td.Error = app.Session.PopString(r.Context(), "error")
+	td.CSRFToken = nosurf.Token(r)
+	return td
+}
+
+func Template(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) error {
+	// get the template cache from the app config if UseCache true, else read it from disk
+	var templateCache map[string]*template.Template
+
+	if app.UseCache {
+		templateCache = app.TemplateCache
+	} else {
+		templateCache, _ = CreateTemplateCache()
+	}
+
+	// get requested template from cache
+	t, ok := templateCache[tmpl]
+	if !ok {
+		return errors.New("could not get template from template cache")
+	}
+
+	buf := new(bytes.Buffer)
+	td = AddDefaultData(td, r)
+	_ = t.Execute(buf, td)
+
+	// render the template
+	_, err := buf.WriteTo(w)
+	if err != nil {
+		fmt.Println("error writing template to browser", err)
+		return err
+	}
+	return nil
+}
+
+// Dosya isimlerini tek tek manual yazmak yerine, Glob() ile dizin içinde arattık ve otomatikleştirdik.
+// Yine cache map şeklinde key değeri string (muhtemel sayfa adı home.page.gohtml), value değeri de *template.Template tipinde olacak yani ilgili sayfanın taslağı tutulacak.
+func CreateTemplateCache() (map[string]*template.Template, error) {
+	myCache := map[string]*template.Template{} // myCache := make(map[string]*template.Template)
+
+	// get all files name *.page.gohtml from ./templates folder
+	pages, err := filepath.Glob(fmt.Sprintf("%s/*.gotmpl", pathToTemplate))
+	if err != nil {
+		return myCache, err
+	}
+
+	// loop through the pages, dizinde bulduğumuz dosya isimlerinin tutulduğu slice üzerinde döngü kurarak hepsinden ayrı ayrı Template oluşturuyoruz bunu da ParseFiles() ile yapıyoruz.
+	for _, page := range pages {
+		name := filepath.Base(page)
+		ts, err := template.New(name).Funcs(functions).ParseFiles(page)
+		if err != nil {
+			return myCache, err
+		}
+
+		// base layout var mı diye kontrol ediyoruz (çünkü diğer .gohtml sayfaları import edebilir.)
+		matches, err := filepath.Glob(fmt.Sprintf("%s/*.layout.gotmpl", pathToTemplate))
+		if err != nil {
+			return myCache, err
+		}
+
+		// eğer base layout varsa, page.gohtml sayfalarında gereklilik olacağı için ParseGlob() ile parse ediyoruz.
+		// ilk versiyonlarda ("./templates/"+tmpl, "./templates/base.layout.gohtml") yaptığımız şeyi yaptık yani.
+		if len(matches) > 0 {
+			ts, err = ts.ParseGlob(fmt.Sprintf("%s/*.layout.gotmpl", pathToTemplate))
+			if err != nil {
+				return myCache, err
+			}
+		}
+		// en son hiçbir hata yoksa elde edilen sayfayı cache değişkenimize ekliyoruz.
+		myCache[name] = ts
+	}
+	return myCache, nil
+}
