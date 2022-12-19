@@ -27,7 +27,7 @@ var errorLog *log.Logger
 
 // main function is the entry point to our program
 func main() {
-	fmt.Println("BOOKING APP")
+	fmt.Println("AFTER FORMATTING OS")
 	db, err := run()
 	if err != nil {
 		log.Fatal(err)

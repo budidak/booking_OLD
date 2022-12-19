@@ -177,7 +177,31 @@ func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
 // to handle POST request
 func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	start := r.Form.Get("start") // Form bilgisini requestten bu şekilde alıyoruz, form içindeki elementin (input name ismidir)
-	end := r.Form.Get("end")
+	end := r.Form.Get("end")     // formdan aldığımız bilgi her zaman string şeklinde tutulur.
+
+	// String -> time.Time tipine dönüştürüyoruz. Database için kullanıyoruz.
+	// 01-01-2022 gibi dönecek bunu handle etmeliyiz önce. GO date&time formatlarken garip bir yaklaşım sergiler.
+	// https://www.pauladamsmith.com/blog/2011/05/go_time.html
+	timeLayout := "2006-01-02"
+	startDate, err := time.Parse(timeLayout, start)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+	endDate, err := time.Parse(timeLayout, end)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	rooms, err := m.DB.SearchAvailabilityForAllRooms(startDate, endDate)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	for _, i := range rooms {
+		m.App.InfoLog.Println("Room:", i.ID, i.RoomName)
+	}
+
 	w.Write([]byte(fmt.Sprintf("Posted to search availability : Start date is %s and End date is %s", start, end)))
 }
 

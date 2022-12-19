@@ -79,7 +79,11 @@ func (m *postgresDBRepo) InsertReservation(res models.Reservation) (int, error) 
 	return newID, nil
 }
 
-// Bunu çalıştırınca RoomRestrictions table'a veri ekleyecek. Ama o tabloda foreign keys var. Bunların karşılığı olmalı, yani Rooms, Reservations, Restrictions tabloları buraya veri eklemeden önce boş olmamalı.
+// Bunu çalıştırınca RoomRestrictions table'a veri ekleyecek. Ama o tabloda foreign keys var. Bunların karşılığı olmalı, yani Rooms (reservations'dan önce elle eklemiştik), Reservations (ui'dan eklendi), Restrictions (elle ekledik şimdilik) tabloları buraya veri eklemeden önce boş olmamalı.
+// Bu tabloda şimdilik şöyle bir problem vardı onu düzelttik: ReservationID notnull idi. Yani RoomRestriction ekleyebilmemiz için odanın mutlaka rezerve edilmesi gerekiyordu.
+// Ama mülk sahibi odayı kendi isteğiyle kapatabilir, rezervasyon olmadan. Bu yüzden Restrictios table'a "Owner Block" diye bi restriction ekledik.
+// Ama her seferinde "soda reset" yapıldığında notnull olan değeri null hale getirmek için database arayüzüne girmek saçma olur ve unutulabilir, bu yüzden o işlemi yapması için bir migration ekliyoruz.
+// soda generate fizz ChangeReservationIdFromNotNullToNullForRoomRestrictionsTable
 func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -125,3 +129,41 @@ func (m *postgresDBRepo) SearchAvailabilityForDatesByRoomID(start, end time.Time
 }
 
 // kullanıcı seçili tarihler arasında hangi odalar available diye search yapabilecek.
+func (m *postgresDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rooms []models.Room
+
+	query := `select 
+	              r.id, r.room_name 
+	          from 
+			      rooms r
+	          where r.id not in 
+			      (select 
+				       rr.room_id 
+			       from 
+				       room_restrictions rr 
+				   where $1 < rr.end_date and $2 > rr.start_date)`
+
+	rows, err := m.DB.QueryContext(ctx, query, start, end)
+	if err != nil {
+		return rooms, err
+	}
+
+	// Sorgumuzdan birden çok değer dönebileceği için (birden fazla oda bu koşulu sağlayabilir çünkü)
+	// hepsini tek tek göstermek için bir döngü kuruyoruz, her iterasyonda birini alıyoruz.
+	for rows.Next() {
+		var room models.Room
+		err := rows.Scan(&room.ID, &room.RoomName)
+		if err != nil {
+			return rooms, err
+		}
+		rooms = append(rooms, room)
+	}
+	// hata var mı diye son kontrol
+	if err := rows.Err(); err != nil {
+		return rooms, err
+	}
+	return rooms, nil // hata yok
+}
